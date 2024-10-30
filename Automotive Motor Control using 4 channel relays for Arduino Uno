@@ -1,0 +1,77 @@
+
+// Constants
+const int RELAY_COUNT = 4;                  // Number of relays
+const int RELAY_PINS[RELAY_COUNT] = {2, 3, 4, 5}; // Relay control pins
+const int BUTTON_PINS[RELAY_COUNT] = {6, 7, 8, 9}; // Button input pins
+const int LED_PINS[RELAY_COUNT] = {10, 11, 12, 13}; // LED indicator pins
+const unsigned long MOTOR_RUN_TIME = 300000; // Motor run time (5 minutes in milliseconds)
+
+// Variables
+unsigned long relayTimers[RELAY_COUNT];     // Timers for each relay
+bool relayStates[RELAY_COUNT] = {false};     // Current state of each relay
+bool relayErrors[RELAY_COUNT] = {false};      // Error status for each relay
+
+void setup() {
+    // Initialize relay, LED, and button pins
+    for (int i = 0; i < RELAY_COUNT; i++) {
+        pinMode(RELAY_PINS[i], OUTPUT);
+        digitalWrite(RELAY_PINS[i], LOW); // Start with all relays off
+        pinMode(LED_PINS[i], OUTPUT);
+        digitalWrite(LED_PINS[i], LOW); // Start with LEDs off
+        pinMode(BUTTON_PINS[i], INPUT_PULLUP); // Set button pins as input with pull-up resistor
+    }
+    Serial.begin(9600); // Initialize serial communication for monitoring
+}
+
+void loop() {
+    for (int i = 0; i < RELAY_COUNT; i++) {
+        // Check if the button for this relay is pressed
+        if (digitalRead(BUTTON_PINS[i]) == LOW) { // Button pressed
+            controlRelay(i);
+            delay(300); // Debounce delay
+        }
+        
+        // Monitor relay state and open it after the specified time
+        if (relayStates[i] && (millis() - relayTimers[i] >= MOTOR_RUN_TIME)) {
+            openRelay(i);
+        }
+        
+        // Check for special conditions (welded state)
+        if (relayStates[i] && digitalRead(RELAY_PINS[i]) == LOW) {
+            relayErrors[i] = true; // Error: welded relay
+        } else {
+            relayErrors[i] = false; // No error
+        }
+    }
+
+    // Report status
+    reportStatus();
+}
+
+void controlRelay(int relayIndex) {
+    relayStates[relayIndex] = true; // Set relay state to closed
+    digitalWrite(RELAY_PINS[relayIndex], HIGH); // Activate relay
+    digitalWrite(LED_PINS[relayIndex], HIGH); // Turn on LED
+    relayTimers[relayIndex] = millis(); // Start the timer
+}
+
+void openRelay(int relayIndex) {
+    relayStates[relayIndex] = false; // Set relay state to open
+    digitalWrite(RELAY_PINS[relayIndex], LOW); // Deactivate relay
+    digitalWrite(LED_PINS[relayIndex], LOW); // Turn off LED
+}
+
+void reportStatus() {
+    for (int i = 0; i < RELAY_COUNT; i++) {
+        Serial.print("Relay ");
+        Serial.print(i + 1);
+        Serial.print(": ");
+        Serial.print(relayStates[i] ? "Closed" : "Open");
+        Serial.print(", Error: ");
+        Serial.print(relayErrors[i] ? "Error" : "No Error");
+        Serial.print(", Special Condition: ");
+        Serial.println(relayErrors[i] ? "Welded" : "Normal");
+    }
+    delay(1000); // Update every second
+}
+```
