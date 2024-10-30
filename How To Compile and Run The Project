@@ -1,0 +1,6 @@
+Open the Arduino IDE and create a new sketch.
+Copy and paste the code into the sketch.
+Connect your Arduino Uno and select the correct board and port in the IDE.
+Upload the code to your Arduino.
+Connect the relays, buttons, and LEDs as per the wiring diagram Designed.
+Open the Serial Monitor to view the status of each relay.
